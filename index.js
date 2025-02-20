@@ -7,7 +7,7 @@ require('dotenv').config();
 // middleware setup
 app.use(express.json({limit: '25mb'}));
 app.use(cors({
-    origin: ['https://feb-backend.vercel.app/', 'http://localhost:5173', 'http://localhost:3000'],
+    origin: ['https://feb-backend.vercel.app/', 'https://feb-frontend.vercel.app', 'http://localhost:5173', 'http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
 }));
