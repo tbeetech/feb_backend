@@ -12,6 +12,20 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
 }));
 
+// Basic routes for testing
+app.get('/', (req, res) => {
+    res.json({ message: 'Welcome to Feb Luxury API' });
+});
+
+app.get('/api', (req, res) => {
+    res.json({ message: 'Backend is running!' });
+});
+
+// Serve favicon.ico
+app.get('/favicon.ico', (req, res) => {
+    res.status(204).end(); // No content response for favicon
+});
+
 // API Routes
 const authRoutes = require('./src/users/user.route');
 const productRoutes = require('./src/products/products.route');
@@ -23,18 +37,18 @@ mongoose.connect(process.env.DB_URL)
     .then(() => console.log("MongoDB connected"))
     .catch(err => console.error("MongoDB connection error:", err));
 
-// Basic route for testing
-app.get('/api', (req, res) => {
-    res.json({ message: 'Backend is running!' });
+// 404 handler - should be after all valid routes
+app.use((req, res) => {
+    console.log('404 for path:', req.path); // Add logging for debugging
+    res.status(404).json({ 
+        message: 'Route not found',
+        path: req.path
+    });
 });
 
 // Error handling middleware
-app.use((req, res, next) => {
-    res.status(404).json({ message: 'Route not found' });
-});
-
 app.use((err, req, res, next) => {
-    console.error(err.stack);
+    console.error('Error:', err.stack);
     res.status(500).json({ 
         message: 'Something went wrong!',
         error: process.env.NODE_ENV === 'development' ? err.message : undefined
