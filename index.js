@@ -7,7 +7,7 @@ require('dotenv').config();
 // middleware setup
 app.use(express.json({limit: '25mb'}));
 app.use(cors({
-    origin: ['https://feb-luxury.vercel.app', 'http://localhost:5173'],
+    origin: ['https://feb-luxury.vercel.app', 'http://localhost:5173', 'http://localhost:3000'],
     credentials: true
 }));
 
@@ -34,4 +34,11 @@ app.use((err, req, res, next) => {
 });
 
 // For Vercel, we export the app instead of calling listen
+const PORT = process.env.PORT || 5000;
+
+// Always start the server (remove the environment check)
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
+
 module.exports = app;
