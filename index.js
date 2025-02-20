@@ -7,25 +7,10 @@ require('dotenv').config();
 // middleware setup
 app.use(express.json({limit: '25mb'}));
 app.use(cors({
-    origin: ['https://feb-backend.vercel.app', 'https://feb-frontend.vercel.app', 'http://localhost:5173', 'http://localhost:5000'],
+    origin: ['https://feb-backend.vercel.app/', 'http://localhost:5173', 'http://localhost:3000'],
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
 }));
-
-// Basic routes for testing
-app.get('/', (req, res) => {
-    res.json({ message: 'Welcome to Feb Luxury API' });
-});
-
-app.get('/api', (req, res) => {
-    res.json({ message: 'Backend is running!' });
-});
-
-// Serve favicon.ico
-app.get('/favicon.ico', (req, res) => {
-    res.status(204).end(); // No content response for favicon
-});
 
 // API Routes
 const authRoutes = require('./src/users/user.route');
@@ -38,18 +23,18 @@ mongoose.connect(process.env.DB_URL)
     .then(() => console.log("MongoDB connected"))
     .catch(err => console.error("MongoDB connection error:", err));
 
-// 404 handler - should be after all valid routes
-app.use((req, res) => {
-    console.log('404 for path:', req.path); // Add logging for debugging
-    res.status(404).json({ 
-        message: 'Route not found',
-        path: req.path
-    });
+// Basic route for testing
+app.get('/api', (req, res) => {
+    res.json({ message: 'Backend is running!' });
 });
 
 // Error handling middleware
+app.use((req, res, next) => {
+    res.status(404).json({ message: 'Route not found' });
+});
+
 app.use((err, req, res, next) => {
-    console.error('Error:', err.stack);
+    console.error(err.stack);
     res.status(500).json({ 
         message: 'Something went wrong!',
         error: process.env.NODE_ENV === 'development' ? err.message : undefined
