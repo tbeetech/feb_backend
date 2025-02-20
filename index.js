@@ -7,8 +7,9 @@ require('dotenv').config();
 // middleware setup
 app.use(express.json({limit: '25mb'}));
 app.use(cors({
-    origin: ['https://feb-luxury.vercel.app', 'http://localhost:5173', 'http://localhost:3000'],
-    credentials: true
+    origin: ['https://feb-backend.vercel.app/', 'http://localhost:5173', 'http://localhost:3000'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
 }));
 
 // API Routes
@@ -28,9 +29,16 @@ app.get('/api', (req, res) => {
 });
 
 // Error handling middleware
+app.use((req, res, next) => {
+    res.status(404).json({ message: 'Route not found' });
+});
+
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).json({ message: 'Something went wrong!' });
+    res.status(500).json({ 
+        message: 'Something went wrong!',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
 });
 
 // For Vercel, we export the app instead of calling listen
