@@ -7,10 +7,22 @@ require('dotenv').config();
 // middleware setup
 app.use(express.json({limit: '25mb'}));
 app.use(cors({
-    origin: ['https://febluxury.com','https://feb-backend.vercel.app', 'https://feb-frontend.vercel.app', 'http://localhost:5173', 'http://localhost:5000'],
+    origin: [
+        'https://febluxury.com',
+        'https://www.febluxury.com',
+        'https://feb-backend.vercel.app', 
+        'https://feb-frontend.vercel.app', 
+        'http://localhost:5173',
+        'http://www.localhost:5173', // Added this line
+        'http://localhost:5000'
+    ],
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Enable pre-flight requests for all routes
+app.options('*', cors());
 
 // API Routes
 const authRoutes = require('./src/users/user.route');
