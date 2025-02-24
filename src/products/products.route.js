@@ -34,19 +34,23 @@ router.get('/', async (req, res) => {
         const { category, subcategory, minPrice, maxPrice, page = 1, limit = 10 } = req.query;
         let filter = {};
         
+        // Build filter based on category and subcategory
         if (category) {
-            filter.category = category.toLowerCase();
             if (subcategory) {
-                filter.subcategory = subcategory.toLowerCase().replace(/-/g, ' ');
+                // If both category and subcategory are provided
+                filter = {
+                    category: category.toLowerCase(),
+                    subcategory: subcategory.toLowerCase().replace(/-/g, ' ')
+                };
+            } else {
+                // If only category is provided
+                filter.category = category.toLowerCase();
             }
         }
 
+        // Add price filter if provided
         if (minPrice && maxPrice) {
-            const min = parseFloat(minPrice);
-            const max = parseFloat(maxPrice);
-            if (!isNaN(min) && !isNaN(max)) {
-                filter.price = { $gte: min, $lte: max }
-            }
+            filter.price = { $gte: parseFloat(minPrice), $lte: parseFloat(maxPrice) };
         }
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -62,7 +66,7 @@ router.get('/', async (req, res) => {
         res.status(200).send({ products, totalPages, totalProducts });
     } catch (error) {
         console.error("error getting products", error);
-        res.status(500).send({ message: "Error getting products" })
+        res.status(500).send({ message: "Error getting products" });
     }
 });
 
