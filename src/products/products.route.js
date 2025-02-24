@@ -31,11 +31,16 @@ router.post("/create-product", async (req, res) => {
 // });
 router.get('/', async (req, res) => {
     try {
-        const { category, minPrice, maxPrice, page = 1, limit = 10 } = req.query;
+        const { category, subcategory, minPrice, maxPrice, page = 1, limit = 10 } = req.query;
         let filter = {}
+        
         if (category && category !== "all") {
-            filter.category = category;
+            filter.category = category.toLowerCase();
+            if (subcategory) {
+                filter.subcategory = subcategory.toLowerCase();
+            }
         }
+
         if (minPrice && maxPrice) {
             const min = parseFloat(minPrice);
             const max = parseFloat(maxPrice);
@@ -43,14 +48,17 @@ router.get('/', async (req, res) => {
                 filter.price = { $gte: min, $lte: max }
             }
         }
+
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const totalProducts = await Products.countDocuments(filter);
         const totalPages = Math.ceil(totalProducts / parseInt(limit));
+        
         const products = await Products.find(filter)
             .skip(skip)
             .limit(parseInt(limit))
             .populate("author", "email")
             .sort({ createdAt: -1 });
+            
         res.status(200).send({ products, totalPages, totalProducts });
     } catch (error) {
         console.error("error getting products", error);
