@@ -32,12 +32,12 @@ router.post("/create-product", async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         const { category, subcategory, minPrice, maxPrice, page = 1, limit = 10 } = req.query;
-        let filter = {}
+        let filter = {};
         
-        if (category && category !== "all") {
+        if (category) {
             filter.category = category.toLowerCase();
             if (subcategory) {
-                filter.subcategory = subcategory.toLowerCase();
+                filter.subcategory = subcategory.toLowerCase().replace(/-/g, ' ');
             }
         }
 
