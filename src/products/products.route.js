@@ -35,22 +35,21 @@ router.get('/', async (req, res) => {
         let filter = {};
         
         // Build filter based on category and subcategory
-        if (category) {
+        if (category && category !== 'all') {
+            filter.category = category.toLowerCase();
+            
+            // Only add subcategory filter if it exists and category is specified
             if (subcategory) {
-                // If both category and subcategory are provided
-                filter = {
-                    category: category.toLowerCase(),
-                    subcategory: subcategory.toLowerCase().replace(/-/g, ' ')
-                };
-            } else {
-                // If only category is provided
-                filter.category = category.toLowerCase();
+                filter.subcategory = subcategory.toLowerCase().replace(/-/g, ' ');
             }
         }
 
         // Add price filter if provided
-        if (minPrice && maxPrice) {
-            filter.price = { $gte: parseFloat(minPrice), $lte: parseFloat(maxPrice) };
+        if (minPrice !== undefined && maxPrice !== undefined) {
+            filter.price = { 
+                $gte: parseFloat(minPrice) || 0,
+                $lte: parseFloat(maxPrice) || Number.MAX_VALUE 
+            };
         }
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -60,13 +59,21 @@ router.get('/', async (req, res) => {
         const products = await Products.find(filter)
             .skip(skip)
             .limit(parseInt(limit))
-            .populate("author", "email")
+            .populate("author", "email username")
             .sort({ createdAt: -1 });
             
-        res.status(200).send({ products, totalPages, totalProducts });
+        res.status(200).send({ 
+            products, 
+            totalPages, 
+            totalProducts,
+            currentPage: parseInt(page)
+        });
     } catch (error) {
-        console.error("error getting products", error);
-        res.status(500).send({ message: "Error getting products" });
+        console.error("Error getting products:", error);
+        res.status(500).send({ 
+            message: "Error getting products",
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined 
+        });
     }
 });
 
