@@ -116,6 +116,34 @@ router.get('/', async (req, res) => {
     }
 });
 
+router.get("/single/:id", async (req, res) => {
+    try {
+        const productId = req.params.id;
+        const product = await Products.findById(productId).populate("author", "email username");
+
+        if (!product) {
+            return res.status(404).json({ 
+                success: false,
+                message: "Product not found" 
+            });
+        }
+
+        const reviews = await Reviews.find({ productId }).populate("userId", "username email");
+        res.status(200).json({ 
+            success: true,
+            product, 
+            reviews 
+        });
+    } catch (error) {
+        console.error("Error getting product:", error);
+        res.status(500).json({ 
+            success: false,
+            message: "Error getting product",
+            error: process.env.NODE_ENV === 'development' ? error.toString() : undefined
+        });
+    }
+});
+
 router.get("/:id", async (req, res) => {
     try {
         const productId = req.params.id;
