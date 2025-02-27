@@ -32,35 +32,16 @@ router.post("/create-product", async (req, res) => {
 // });
 router.get('/', async (req, res) => {
     try {
-        const { category, subcategory, minPrice, maxPrice, page = 1, limit = 10 } = req.query;
+        const { category, subcategory, minPrice, maxPrice, page = 1, limit = 10, sort = '-createdAt' } = req.query;
         let filter = {};
         
-        // Normalize and validate category
+        // Build filter object
         if (category && category !== 'all') {
-            const normalizedCategory = category.toLowerCase().trim();
-            if (!CATEGORIES[normalizedCategory.toUpperCase()]) {
-                return res.status(400).json({ 
-                    message: `Invalid category: ${category}`
-                });
-            }
-            filter.category = normalizedCategory;
-            
-            // Only process subcategory if category is valid
-            if (subcategory) {
-                const normalizedSubcategory = subcategory.toLowerCase().replace(/\s+/g, '-').trim();
-                const validSubcategories = CATEGORIES[normalizedCategory.toUpperCase()].subcategories;
-                
-                if (!validSubcategories.includes(normalizedSubcategory)) {
-                    return res.status(400).json({
-                        message: `Invalid subcategory: ${subcategory} for category: ${category}`,
-                        validSubcategories
-                    });
-                }
-                filter.subcategory = normalizedSubcategory;
-            }
+            filter.category = category.toLowerCase().trim();
         }
-
-        // Add price filter if provided
+        if (subcategory) {
+            filter.subcategory = subcategory.toLowerCase().trim();
+        }
         if (minPrice !== undefined || maxPrice !== undefined) {
             filter.price = {};
             if (minPrice !== undefined) filter.price.$gte = parseFloat(minPrice);
@@ -68,25 +49,32 @@ router.get('/', async (req, res) => {
         }
 
         // Debug log
-        console.log('Query filter:', filter);
+        console.log('Query params:', { filter, sort, page, limit });
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const totalProducts = await Products.countDocuments(filter);
         const totalPages = Math.ceil(totalProducts / parseInt(limit));
         
+        // Add proper sorting
+        const sortObj = {};
+        if (sort.startsWith('-')) {
+            sortObj[sort.substring(1)] = -1;
+        } else {
+            sortObj[sort] = 1;
+        }
+
         const products = await Products.find(filter)
             .skip(skip)
             .limit(parseInt(limit))
             .populate("author", "email username")
-            .sort({ createdAt: -1 });
+            .sort(sortObj);
             
         res.status(200).json({ 
             success: true,
             products, 
             totalPages, 
             totalProducts,
-            currentPage: parseInt(page),
-            filter // Include filter in response for debugging
+            currentPage: parseInt(page)
         });
     } catch (error) {
         console.error("Error getting products:", error);
