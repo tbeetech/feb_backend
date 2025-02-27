@@ -39,17 +39,46 @@ router.get('/', async (req, res) => {
         if (category && category !== 'all') {
             filter.category = category.toLowerCase().trim();
         }
+        
         if (subcategory) {
             filter.subcategory = subcategory.toLowerCase().trim();
         }
+
+        // Properly handle price filters
         if (minPrice !== undefined || maxPrice !== undefined) {
             filter.price = {};
-            if (minPrice !== undefined) filter.price.$gte = parseFloat(minPrice);
-            if (maxPrice !== undefined) filter.price.$lte = parseFloat(maxPrice);
+            
+            // Handle minPrice
+            if (minPrice !== undefined && minPrice !== '') {
+                const parsedMinPrice = parseFloat(minPrice);
+                if (!isNaN(parsedMinPrice)) {
+                    filter.price.$gte = parsedMinPrice;
+                }
+            }
+            
+            // Handle maxPrice
+            if (maxPrice !== undefined && maxPrice !== '') {
+                const parsedMaxPrice = parseFloat(maxPrice);
+                if (!isNaN(parsedMaxPrice)) {
+                    filter.price.$lte = parsedMaxPrice;
+                }
+            }
+            
+            // Remove price filter if no valid prices
+            if (Object.keys(filter.price).length === 0) {
+                delete filter.price;
+            }
         }
 
         // Debug log
-        console.log('Query params:', { filter, sort, page, limit });
+        console.log('Query params:', { 
+            filter, 
+            sort, 
+            page, 
+            limit,
+            rawMinPrice: minPrice,
+            rawMaxPrice: maxPrice 
+        });
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const totalProducts = await Products.countDocuments(filter);
@@ -74,14 +103,15 @@ router.get('/', async (req, res) => {
             products, 
             totalPages, 
             totalProducts,
-            currentPage: parseInt(page)
+            currentPage: parseInt(page),
+            filter // Include filter in response for debugging
         });
     } catch (error) {
         console.error("Error getting products:", error);
         res.status(500).json({ 
             success: false,
             message: "Error getting products",
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined 
+            error: process.env.NODE_ENV === 'development' ? error.toString() : undefined 
         });
     }
 });
