@@ -1,5 +1,6 @@
 const express = require('express');
 const Products = require("./products.model");
+const { CATEGORIES } = require('../constants/categoryConstants');
 const router = express.Router();
 const Reviews = require('../reviews/reviews.model');
 const verifyToken = require('../middleware/verifyToken');
@@ -34,23 +35,40 @@ router.get('/', async (req, res) => {
         const { category, subcategory, minPrice, maxPrice, page = 1, limit = 10 } = req.query;
         let filter = {};
         
-        // Build filter based on category and subcategory
+        // Normalize and validate category
         if (category && category !== 'all') {
-            filter.category = category.toLowerCase();
+            const normalizedCategory = category.toLowerCase().trim();
+            if (!CATEGORIES[normalizedCategory.toUpperCase()]) {
+                return res.status(400).json({ 
+                    message: `Invalid category: ${category}`
+                });
+            }
+            filter.category = normalizedCategory;
             
-            // Only add subcategory filter if it exists and category is specified
+            // Only process subcategory if category is valid
             if (subcategory) {
-                filter.subcategory = subcategory.toLowerCase().replace(/-/g, ' ');
+                const normalizedSubcategory = subcategory.toLowerCase().replace(/\s+/g, '-').trim();
+                const validSubcategories = CATEGORIES[normalizedCategory.toUpperCase()].subcategories;
+                
+                if (!validSubcategories.includes(normalizedSubcategory)) {
+                    return res.status(400).json({
+                        message: `Invalid subcategory: ${subcategory} for category: ${category}`,
+                        validSubcategories
+                    });
+                }
+                filter.subcategory = normalizedSubcategory;
             }
         }
 
         // Add price filter if provided
-        if (minPrice !== undefined && maxPrice !== undefined) {
-            filter.price = { 
-                $gte: parseFloat(minPrice) || 0,
-                $lte: parseFloat(maxPrice) || Number.MAX_VALUE 
-            };
+        if (minPrice !== undefined || maxPrice !== undefined) {
+            filter.price = {};
+            if (minPrice !== undefined) filter.price.$gte = parseFloat(minPrice);
+            if (maxPrice !== undefined) filter.price.$lte = parseFloat(maxPrice);
         }
+
+        // Debug log
+        console.log('Query filter:', filter);
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const totalProducts = await Products.countDocuments(filter);
@@ -62,15 +80,18 @@ router.get('/', async (req, res) => {
             .populate("author", "email username")
             .sort({ createdAt: -1 });
             
-        res.status(200).send({ 
+        res.status(200).json({ 
+            success: true,
             products, 
             totalPages, 
             totalProducts,
-            currentPage: parseInt(page)
+            currentPage: parseInt(page),
+            filter // Include filter in response for debugging
         });
     } catch (error) {
         console.error("Error getting products:", error);
-        res.status(500).send({ 
+        res.status(500).json({ 
+            success: false,
             message: "Error getting products",
             error: process.env.NODE_ENV === 'development' ? error.message : undefined 
         });

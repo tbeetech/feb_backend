@@ -1,29 +1,32 @@
 const mongoose = require('mongoose');
+const { CATEGORY_NAMES, SUBCATEGORIES } = require('../constants/categoryConstants');
 
 const ProductSchema = new mongoose.Schema({
-    name: { type: String, required: true },
+    name: { 
+        type: String, 
+        required: true,
+        trim: true
+    },
     category: { 
         type: String, 
         required: true, 
         lowercase: true,
-        enum: ['accessories', 'fragrance', 'bags', 'clothes', 'jewerly', 'all']
+        trim: true,
+        enum: [...CATEGORY_NAMES, 'all'],
+        set: val => val.toLowerCase()
     },
     subcategory: { 
         type: String, 
         lowercase: true,
+        trim: true,
+        set: val => val ? val.toLowerCase().replace(/\s+/g, '-') : val,
         validate: {
             validator: function(v) {
-                const validSubcategories = {
-                    accessories: ['sunglasses', 'wrist watches', 'belts', 'bangles-bracelet', 'earrings', 'necklace', 'pearls'],
-                    fragrance: ['designer-niche', 'unboxed', 'testers', 'arabian', 'diffuser', 'mist'],
-                    bags: [],
-                    clothes: [],
-                    jewerly: []
-                };
                 if (!v) return true; // subcategory is optional
-                return !this.category || !validSubcategories[this.category] || validSubcategories[this.category].includes(v);
+                if (!this.category || this.category === 'all') return false;
+                return SUBCATEGORIES[this.category]?.includes(v);
             },
-            message: props => `${props.value} is not a valid subcategory for the selected category`
+            message: props => `${props.value} is not a valid subcategory for ${this.category}`
         }
     },
     description: String,
@@ -36,9 +39,21 @@ const ProductSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Compound index for better query performance
+// Compound indexes for better query performance
 ProductSchema.index({ category: 1, subcategory: 1 });
-ProductSchema.index({ price: 1 }); // Add index for price queries
+ProductSchema.index({ price: 1 });
+ProductSchema.index({ name: 'text' }); // Add text index for search
+
+// Pre-save middleware to normalize category and subcategory
+ProductSchema.pre('save', function(next) {
+    if (this.category) {
+        this.category = this.category.toLowerCase();
+    }
+    if (this.subcategory) {
+        this.subcategory = this.subcategory.toLowerCase().replace(/\s+/g, '-');
+    }
+    next();
+});
 
 const Products = mongoose.model("Product", ProductSchema);
 module.exports = Products;
