@@ -116,6 +116,41 @@ router.get('/', async (req, res) => {
     }
 });
 
+router.get('/search', async (req, res) => {
+    try {
+        const { query } = req.query;
+        let filter = {};
+
+        if (query) {
+            filter = {
+                $or: [
+                    { name: { $regex: query, $options: 'i' } },
+                    { description: { $regex: query, $options: 'i' } },
+                    { category: { $regex: query, $options: 'i' } },
+                    { subcategory: { $regex: query, $options: 'i' } }
+                ]
+            };
+        }
+
+        const products = await Products.find(filter)
+            .sort({ createdAt: -1 })
+            .limit(20);
+
+        res.status(200).json({
+            success: true,
+            products,
+            totalProducts: products.length
+        });
+    } catch (error) {
+        console.error("Error searching products:", error);
+        res.status(500).json({
+            success: false,
+            message: "Error searching products",
+            error: process.env.NODE_ENV === 'development' ? error.toString() : undefined
+        });
+    }
+});
+
 router.get("/single/:id", async (req, res) => {
     try {
         const productId = req.params.id;
