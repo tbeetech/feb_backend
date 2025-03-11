@@ -194,7 +194,7 @@ router.get("/:id", async (req, res) => {
         res.status(500).send({ message: "Error getting product" })
     }
 })
-router.patch("/update-product/:id", verifyToken,verifyAdmin, async (req, res) => {
+router.patch("/update-product/:id", async (req, res) => {
     try {
         const productId = req.params.id;
         const updatedProduct = await Products.findByIdAndUpdate(productId, { ...req.body }, {
