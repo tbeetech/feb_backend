@@ -39,6 +39,15 @@ const ProductSchema = new mongoose.Schema({
         type: String,
         enum: ['regular', 'contact-to-order'],
         default: 'regular'
+    },
+    sizeType: {
+        type: String,
+        enum: ['roman', 'numeric', 'none'],
+        default: 'none'
+    },
+    sizes: {
+        type: [String],
+        default: []
     }
 }, {
     timestamps: true
