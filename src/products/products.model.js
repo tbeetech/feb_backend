@@ -58,6 +58,22 @@ const ProductSchema = new mongoose.Schema({
         type: Number,
         default: 0,
         min: 0
+    },
+    deliveryTimeFrame: {
+        startDate: {
+            type: Date,
+            required: true
+        },
+        endDate: {
+            type: Date,
+            required: true,
+            validate: {
+                validator: function(v) {
+                    return v >= this.deliveryTimeFrame.startDate;
+                },
+                message: 'End date must be after start date'
+            }
+        }
     }
 }, {
     timestamps: true
