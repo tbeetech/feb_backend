@@ -30,9 +30,37 @@ const CATEGORIES = {
         name: 'clothes',
         subcategories: []
     },
-    JEWERLY: {
-        name: 'jewerly',
-        subcategories: []
+    NEW: {
+        name: 'new',
+        subcategories: [
+            'this-week',
+            'this-month'
+        ]
+    },
+    CORPORATE: {
+        name: 'corporate',
+        subcategories: [
+            'suits',
+            'blazers',
+            'office-wear'
+        ]
+    },
+    DRESS: {
+        name: 'dress',
+        subcategories: [
+            'casual',
+            'formal',
+            'party'
+        ]
+    },
+    SHOES: {
+        name: 'shoes',
+        subcategories: [
+            'heels',
+            'flats',
+            'sandals',
+            'sneakers'
+        ]
     }
 };
 
