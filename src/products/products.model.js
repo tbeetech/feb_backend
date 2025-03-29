@@ -34,7 +34,7 @@ const ProductSchema = new mongoose.Schema({
     oldPrice: Number,
     image: String,
     rating: { type: Number, default: 0 },
-    author: { type: mongoose.Types.ObjectId, ref: "User", required: true },
+    author: { type: mongoose.Types.ObjectId, ref: "User", required: false },
     orderType: {
         type: String,
         enum: ['regular', 'contact-to-order'],
@@ -59,6 +59,11 @@ const ProductSchema = new mongoose.Schema({
         default: 0,
         min: 0
     },
+    colors: [{
+        name: String,
+        hexCode: String,
+        imageUrl: String
+    }],
     deliveryTimeFrame: {
         startDate: {
             type: Date,

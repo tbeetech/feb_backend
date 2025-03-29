@@ -8,10 +8,17 @@ const verifyAdmin = require('../middleware/verifyAdmin');
 
 router.post("/create-product", async (req, res) => {
     try {
-        const newProduct = new Products({
-            ...req.body
-        })
-        const savedProduct = await newProduct.save()
+        // Create a new product with the request body
+        // If author is not provided, we'll use a dummy value for anonymous author
+        const productData = {
+            ...req.body,
+            // Set a default author ID only if not provided in the request
+            author: req.body.author || '000000000000000000000000'
+        };
+
+        const newProduct = new Products(productData);
+        const savedProduct = await newProduct.save();
+        
         const reviews = await Reviews.find({ productId: savedProduct._id });
         if (reviews.length > 0) {
             const totalRating = reviews.reduce((acc, review) => acc + review.rating, 0);
@@ -22,8 +29,7 @@ router.post("/create-product", async (req, res) => {
         res.status(201).send(savedProduct);
     } catch (error) {
         console.error("error creating product", error);
-        res.status(500).send({ message: "Error creating product" })
-
+        res.status(500).send({ message: "Error creating product", error: error.message });
     }
 })
 
@@ -197,9 +203,17 @@ router.get("/:id", async (req, res) => {
 router.patch("/update-product/:id", async (req, res) => {
     try {
         const productId = req.params.id;
-        const updatedProduct = await Products.findByIdAndUpdate(productId, { ...req.body }, {
-            new: true
-        })
+        const updateData = { 
+            ...req.body,
+            // Set a default author ID only if not provided in the request and it's a required update
+            author: req.body.author || '000000000000000000000000'
+        };
+        
+        const updatedProduct = await Products.findByIdAndUpdate(
+            productId, 
+            updateData, 
+            { new: true, runValidators: true }
+        );
 
         if (!updatedProduct) {
             return res.status(404).send({ message: "Product not found" });
@@ -207,17 +221,15 @@ router.patch("/update-product/:id", async (req, res) => {
         res.status(200).send({
             message: "Product updated successfully",
             product: updatedProduct
-        })
-
+        });
     } catch (error) {
         console.error("Error updating the product", error);
-        res.status(500).send({ message: "Failed to update the product" });
-
-
-
+        res.status(500).send({ 
+            message: "Failed to update the product",
+            error: error.message
+        });
     }
-
-})
+});
 
 router.delete('/:id', async (req, res) => {
     try {
