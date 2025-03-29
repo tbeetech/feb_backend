@@ -33,6 +33,10 @@ const ProductSchema = new mongoose.Schema({
     price: { type: Number, required: true },
     oldPrice: Number,
     image: String,
+    gallery: {
+        type: [String],
+        default: []
+    },
     rating: { type: Number, default: 0 },
     author: { type: mongoose.Types.ObjectId, ref: "User", required: false },
     orderType: {
