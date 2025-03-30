@@ -19,7 +19,20 @@ const ProductSchema = new mongoose.Schema({
         type: String, 
         lowercase: true,
         trim: true,
-        set: val => val ? val.toLowerCase().replace(/\s+/g, '-') : val
+        set: val => val ? val.toLowerCase().replace(/\s+/g, '-') : val,
+        validate: {
+            validator: function(v) {
+                if (!v) return true; // subcategory is optional
+                if (!this.category || this.category === 'all') return true; // Skip validation if category is not set
+                
+                // Get valid subcategories for this category
+                const validSubcategories = SUBCATEGORIES[this.category] || [];
+                
+                // In backend, subcategories are strings, so directly check for inclusion
+                return validSubcategories.includes(v);
+            },
+            message: props => `${props.value} is not a valid subcategory for the selected category (${this.category})`
+        }
     },
     description: String,
     price: { type: Number, required: true },
@@ -38,7 +51,7 @@ const ProductSchema = new mongoose.Schema({
     },
     sizeType: {
         type: String,
-        enum: ['roman', 'numeric', 'none'],
+        enum: ['roman', 'numeric', 'none', 'footwear'],
         default: 'none'
     },
     sizes: {

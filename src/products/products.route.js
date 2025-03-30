@@ -22,7 +22,21 @@ router.post("/create-product", async (req, res) => {
 
         console.log("Creating product with data:", JSON.stringify(productData, null, 2));
         
+        // Create product instance for validation
         const newProduct = new Products(productData);
+        
+        // Validate the product before saving
+        const validationError = newProduct.validateSync();
+        if (validationError) {
+            console.error("Validation error:", validationError);
+            return res.status(400).send({
+                message: "Product validation failed",
+                error: validationError.message,
+                details: validationError.errors
+            });
+        }
+        
+        // Save the product
         const savedProduct = await newProduct.save();
         
         const reviews = await Reviews.find({ productId: savedProduct._id });
@@ -34,12 +48,28 @@ router.post("/create-product", async (req, res) => {
         }
         res.status(201).send(savedProduct);
     } catch (error) {
-        console.error("error creating product", error);
-        res.status(500).send({ 
-            message: "Error creating product", 
-            error: error.message,
-            details: error.errors || {}
-        });
+        console.error("Error creating product:", error);
+        
+        // Prepare a detailed error response
+        let errorResponse = { 
+            message: "Error creating product"
+        };
+        
+        // Add validation error details if available
+        if (error.name === 'ValidationError') {
+            errorResponse.error = "Validation failed";
+            errorResponse.details = {};
+            
+            // Format validation errors for each field
+            Object.keys(error.errors || {}).forEach(field => {
+                errorResponse.details[field] = error.errors[field].message;
+            });
+        } else {
+            // For other types of errors
+            errorResponse.error = error.message;
+        }
+        
+        res.status(error.name === 'ValidationError' ? 400 : 500).send(errorResponse);
     }
 })
 
@@ -228,26 +258,62 @@ router.patch("/update-product/:id", async (req, res) => {
         
         console.log("Updating product with data:", JSON.stringify(updateData, null, 2));
         
+        // First, check if the product exists
+        const existingProduct = await Products.findById(productId);
+        if (!existingProduct) {
+            return res.status(404).send({ message: "Product not found" });
+        }
+        
+        // Validate the update data before applying
+        const tempProduct = new Products({
+            ...existingProduct.toObject(),
+            ...updateData
+        });
+        
+        const validationError = tempProduct.validateSync();
+        if (validationError) {
+            console.error("Validation error:", validationError);
+            return res.status(400).send({
+                message: "Product validation failed",
+                error: validationError.message,
+                details: validationError.errors
+            });
+        }
+        
+        // Apply the update
         const updatedProduct = await Products.findByIdAndUpdate(
             productId, 
             updateData, 
             { new: true, runValidators: true }
         );
 
-        if (!updatedProduct) {
-            return res.status(404).send({ message: "Product not found" });
-        }
         res.status(200).send({
             message: "Product updated successfully",
             product: updatedProduct
         });
     } catch (error) {
-        console.error("Error updating the product", error);
-        res.status(500).send({ 
-            message: "Failed to update the product",
-            error: error.message,
-            details: error.errors || {}
-        });
+        console.error("Error updating the product:", error);
+        
+        // Prepare a detailed error response
+        let errorResponse = { 
+            message: "Failed to update the product"
+        };
+        
+        // Add validation error details if available
+        if (error.name === 'ValidationError') {
+            errorResponse.error = "Validation failed";
+            errorResponse.details = {};
+            
+            // Format validation errors for each field
+            Object.keys(error.errors || {}).forEach(field => {
+                errorResponse.details[field] = error.errors[field].message;
+            });
+        } else {
+            // For other types of errors
+            errorResponse.error = error.message;
+        }
+        
+        res.status(error.name === 'ValidationError' ? 400 : 500).send(errorResponse);
     }
 });
 
