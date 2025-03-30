@@ -8,14 +8,20 @@ const verifyAdmin = require('../middleware/verifyAdmin');
 
 router.post("/create-product", async (req, res) => {
     try {
-        // Create a new product with the request body
-        // If author is not provided, we'll use a dummy value for anonymous author
+        // Prepare the product data with all required fields and proper formats
         const productData = {
             ...req.body,
             // Set a default author ID only if not provided in the request
-            author: req.body.author || '000000000000000000000000'
+            author: req.body.author || '000000000000000000000000',
+            // Ensure deliveryTimeFrame is properly structured
+            deliveryTimeFrame: {
+                startDate: req.body.deliveryTimeFrame?.startDate || new Date(),
+                endDate: req.body.deliveryTimeFrame?.endDate || new Date(new Date().setDate(new Date().getDate() + 7))
+            }
         };
 
+        console.log("Creating product with data:", JSON.stringify(productData, null, 2));
+        
         const newProduct = new Products(productData);
         const savedProduct = await newProduct.save();
         
@@ -29,7 +35,11 @@ router.post("/create-product", async (req, res) => {
         res.status(201).send(savedProduct);
     } catch (error) {
         console.error("error creating product", error);
-        res.status(500).send({ message: "Error creating product", error: error.message });
+        res.status(500).send({ 
+            message: "Error creating product", 
+            error: error.message,
+            details: error.errors || {}
+        });
     }
 })
 
@@ -203,11 +213,20 @@ router.get("/:id", async (req, res) => {
 router.patch("/update-product/:id", async (req, res) => {
     try {
         const productId = req.params.id;
+        
+        // Prepare update data with all required fields and proper formats
         const updateData = { 
             ...req.body,
-            // Set a default author ID only if not provided in the request and it's a required update
-            author: req.body.author || '000000000000000000000000'
+            // Set a default author ID only if not provided in the request
+            author: req.body.author || '000000000000000000000000',
+            // Ensure deliveryTimeFrame is properly structured
+            deliveryTimeFrame: {
+                startDate: req.body.deliveryTimeFrame?.startDate || new Date(),
+                endDate: req.body.deliveryTimeFrame?.endDate || new Date(new Date().setDate(new Date().getDate() + 7))
+            }
         };
+        
+        console.log("Updating product with data:", JSON.stringify(updateData, null, 2));
         
         const updatedProduct = await Products.findByIdAndUpdate(
             productId, 
@@ -226,7 +245,8 @@ router.patch("/update-product/:id", async (req, res) => {
         console.error("Error updating the product", error);
         res.status(500).send({ 
             message: "Failed to update the product",
-            error: error.message
+            error: error.message,
+            details: error.errors || {}
         });
     }
 });

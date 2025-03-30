@@ -19,15 +19,7 @@ const ProductSchema = new mongoose.Schema({
         type: String, 
         lowercase: true,
         trim: true,
-        set: val => val ? val.toLowerCase().replace(/\s+/g, '-') : val,
-        validate: {
-            validator: function(v) {
-                if (!v) return true; // subcategory is optional
-                if (!this.category || this.category === 'all') return false;
-                return SUBCATEGORIES[this.category]?.includes(v);
-            },
-            message: props => `${props.value} is not a valid subcategory for ${this.category}`
-        }
+        set: val => val ? val.toLowerCase().replace(/\s+/g, '-') : val
     },
     description: String,
     price: { type: Number, required: true },
@@ -71,13 +63,22 @@ const ProductSchema = new mongoose.Schema({
     deliveryTimeFrame: {
         startDate: {
             type: Date,
-            required: true
+            required: true,
+            default: Date.now
         },
         endDate: {
             type: Date,
             required: true,
+            default: function() {
+                // Default to 7 days from now
+                const date = new Date();
+                date.setDate(date.getDate() + 7);
+                return date;
+            },
             validate: {
                 validator: function(v) {
+                    // Skip validation if either field is missing
+                    if (!this.deliveryTimeFrame || !this.deliveryTimeFrame.startDate) return true;
                     return v >= this.deliveryTimeFrame.startDate;
                 },
                 message: 'End date must be after start date'
