@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose'); 
 const cors = require('cors');
+const path = require('path');
 const app = express();
 require('dotenv').config();
 
@@ -13,7 +14,8 @@ app.use(cors({
         'https://feb-backend.vercel.app', 
         'https://feb-frontend.vercel.app', 
         'http://localhost:5173',
-        'http://www.localhost:5173', // Added this line
+        'http://www.localhost:5173',
+        'http://localhost:5174',
         'http://localhost:5000'
     ],
     credentials: true,
@@ -23,6 +25,10 @@ app.use(cors({
 
 // Enable pre-flight requests for all routes
 app.options('*', cors());
+
+// Serve static files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 // API Routes
 const authRoutes = require('./src/users/user.route');

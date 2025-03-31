@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { CATEGORY_NAMES, SUBCATEGORIES } = require('../constants/categoryConstants');
+const { getImageUrl, normalizeImageUrl } = require('../utils/imageUrl');
 
 const ProductSchema = new mongoose.Schema({
     name: { 
@@ -37,10 +38,20 @@ const ProductSchema = new mongoose.Schema({
     description: String,
     price: { type: Number, required: true },
     oldPrice: Number,
-    image: String,
+    image: {
+        type: String,
+        set: normalizeImageUrl,
+        get: getImageUrl
+    },
     gallery: {
         type: [String],
-        default: []
+        default: [],
+        set: function(images) {
+            return images.map(normalizeImageUrl).filter(Boolean);
+        },
+        get: function(images) {
+            return images.map(getImageUrl).filter(Boolean);
+        }
     },
     rating: { type: Number, default: 0 },
     author: { type: mongoose.Types.ObjectId, ref: "User", required: false },
@@ -71,7 +82,11 @@ const ProductSchema = new mongoose.Schema({
     colors: [{
         name: String,
         hexCode: String,
-        imageUrl: String
+        imageUrl: {
+            type: String,
+            set: normalizeImageUrl,
+            get: getImageUrl
+        }
     }],
     deliveryTimeFrame: {
         startDate: {
@@ -99,7 +114,9 @@ const ProductSchema = new mongoose.Schema({
         }
     }
 }, {
-    timestamps: true
+    timestamps: true,
+    toJSON: { getters: true },
+    toObject: { getters: true }
 });
 
 // Compound indexes for better query performance

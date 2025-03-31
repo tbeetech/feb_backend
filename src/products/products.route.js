@@ -154,10 +154,18 @@ router.get('/', async (req, res) => {
         });
     } catch (error) {
         console.error("Error getting products:", error);
+        // Log the full error stack trace in development
+        if (process.env.NODE_ENV === 'development') {
+            console.error(error.stack);
+        }
         res.status(500).json({ 
             success: false,
             message: "Error getting products",
-            error: process.env.NODE_ENV === 'development' ? error.toString() : undefined 
+            error: process.env.NODE_ENV === 'development' ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
+            } : undefined 
         });
     }
 });
