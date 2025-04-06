@@ -16,21 +16,47 @@ const verifyToken = (req, res, next)=> {
         }
 
         if(!token) {
-            return res.status(401).send({message: "No token provided"})
+            return res.status(401).json({ 
+                success: false,
+                message: "Authentication required. No token provided."
+            });
         }
 
-        const decoded = jwt.verify(token, JWT_SECRET);
-        if(!decoded){
-            return res.status(401).send({message: "Invalid token"})
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET);
+            
+            if(!decoded) {
+                return res.status(401).json({
+                    success: false,
+                    message: "Invalid token. Please login again."
+                });
+            }
+            
+            req.user = decoded;
+            req.userId = decoded.userId;
+            req.role = decoded.role;
+            next();
+        } catch (jwtError) {
+            console.error('JWT verification error:', jwtError);
+            
+            if (jwtError.name === 'TokenExpiredError') {
+                return res.status(401).json({
+                    success: false,
+                    message: "Your session has expired. Please login again."
+                });
+            }
+            
+            return res.status(401).json({
+                success: false,
+                message: "Invalid token. Please login again."
+            });
         }
-        
-        req.user = decoded;
-        req.userId = decoded.userId;
-        req.role = decoded.role;
-        next();
     } catch (error){
         console.error('Error while verifying token:', error);
-        res.status(401).send({message: 'Error while verifying token'})
+        res.status(500).json({
+            success: false,
+            message: 'Authentication error. Please try again.'
+        });
     }
 }
 

@@ -33,26 +33,50 @@ router.get("/product/:productId", async (req, res) => {
 // Post a new review
 router.post("/post-review", verifyToken, async (req, res) => {
     try {
+        console.log("Received review submission:", req.body);
+        console.log("User from token:", req.user);
+        
         const { comment, rating, productId } = req.body;
-        const userId = req.user._id;
-
+        const userId = req.user._id || req.user.userId; // Handle both formats
+        
+        // Validate input
         if (!comment || !rating || !productId) {
             return res.status(400).json({ 
                 success: false,
                 message: "All fields are required" 
             });
         }
+        
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "User authentication failed. Please login again."
+            });
+        }
 
+        // Validate product exists
+        const product = await Products.findById(productId);
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found"
+            });
+        }
+
+        console.log(`Checking for existing review - ProductID: ${productId}, UserID: ${userId}`);
         const existingReview = await Reviews.findOne({ productId, userId });
 
         if (existingReview) {
+            console.log("Updating existing review:", existingReview._id);
             // Update existing review
             existingReview.comment = comment;
             existingReview.rating = rating;
             existingReview.isEdited = true;
             existingReview.editedAt = new Date();
             await existingReview.save();
+            console.log("Review successfully updated");
         } else {
+            console.log("Creating new review");
             // Create new review
             const newReview = new Reviews({
                 comment,
@@ -62,11 +86,13 @@ router.post("/post-review", verifyToken, async (req, res) => {
                 status: 'active'
             });
             await newReview.save();
+            console.log("New review created with ID:", newReview._id);
 
             // Increment review count only for new reviews
             await Products.findByIdAndUpdate(productId, {
                 $inc: { reviewCount: 1 }
             });
+            console.log("Product review count incremented");
         }
 
         // Update product rating
@@ -82,6 +108,7 @@ router.post("/post-review", verifyToken, async (req, res) => {
             await Products.findByIdAndUpdate(productId, {
                 rating: averageRating
             });
+            console.log(`Product rating updated to ${averageRating}`);
         }
 
         // Return updated reviews
@@ -92,6 +119,7 @@ router.post("/post-review", verifyToken, async (req, res) => {
         .populate('userId', 'username email')
         .sort({ createdAt: -1 });
 
+        console.log(`Returning ${updatedReviews.length} reviews`);
         res.status(200).json({
             success: true,
             message: 'Review processed successfully',
@@ -101,7 +129,8 @@ router.post("/post-review", verifyToken, async (req, res) => {
         console.error("Error posting review:", error);
         res.status(500).json({ 
             success: false,
-            message: "Failed to post review" 
+            message: "Failed to post review",
+            error: error.message
         });
     }
 });
