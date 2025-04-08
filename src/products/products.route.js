@@ -78,8 +78,28 @@ router.post("/create-product", async (req, res) => {
 // });
 router.get('/', async (req, res) => {
     try {
-        const { category, subcategory, minPrice, maxPrice, page = 1, limit = 10, sort = '-createdAt' } = req.query;
+        const { 
+            category, 
+            subcategory, 
+            minPrice, 
+            maxPrice, 
+            page = 1, 
+            limit = 10, 
+            sort = '-createdAt',
+            q = '' // Search query parameter
+        } = req.query;
+        
         let filter = {};
+        
+        // Add search functionality
+        if (q && q.trim() !== '') {
+            filter.$or = [
+                { name: { $regex: q, $options: 'i' } },
+                { description: { $regex: q, $options: 'i' } },
+                { category: { $regex: q, $options: 'i' } },
+                { subcategory: { $regex: q, $options: 'i' } }
+            ];
+        }
         
         // Build filter object
         if (category && category !== 'all') {
@@ -123,7 +143,8 @@ router.get('/', async (req, res) => {
             page, 
             limit,
             rawMinPrice: minPrice,
-            rawMaxPrice: maxPrice 
+            rawMaxPrice: maxPrice,
+            searchQuery: q
         });
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
