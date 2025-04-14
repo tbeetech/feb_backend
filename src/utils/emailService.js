@@ -82,8 +82,19 @@ const emailService = {
             <p><strong>Total Amount:</strong> ₦${options.totalAmount}</p>
           </div>
           
+          <div style="margin-bottom: 25px; background-color: #fff8e1; padding: 15px; border-left: 4px solid #ffc107; border-radius: 4px;">
+            <p style="font-weight: bold; margin-top: 0;">Important: Receipt and Payment Instructions</p>
+            <p>A PDF receipt has been attached to this email. Please:</p>
+            <ol style="margin-left: 20px; margin-bottom: 5px;">
+              <li>Download the attached receipt</li>
+              <li>Make payment via bank transfer using the account details on the receipt</li>
+              <li>Forward the receipt to our WhatsApp number (+2348033825144) along with your payment confirmation</li>
+            </ol>
+            <p style="margin-bottom: 0;">Your order will be processed after we confirm your payment.</p>
+          </div>
+          
           <div style="margin-bottom: 30px;">
-            <p>Your receipt is attached to this email. To complete your order, please:</p>
+            <p>To complete your order, please:</p>
             <ol style="margin-left: 20px;">
               <li>Make payment via bank transfer to the account details on your receipt</li>
               <li>Contact us via WhatsApp to confirm your payment</li>
