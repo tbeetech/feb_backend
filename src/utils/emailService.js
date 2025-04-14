@@ -12,30 +12,24 @@ const emailService = {
     }
     
     // Use environment variables for sensitive information
-    // For Gmail, we're using the App Password method which is more secure
-    // This password should be generated from Google Account > Security > App Passwords
     return nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true, // Use SSL
+      service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD
       },
       tls: {
-        // Do not fail on invalid certs
         rejectUnauthorized: false
       }
     });
   },
 
-  // Fallback transporter using direct SMTP (as an alternative if primary fails)
+  // Create a more direct SMTP transporter as fallback
   createFallbackTransporter: () => {
-    // For fallback, we'll use a more direct SMTP connection
     return nodemailer.createTransport({
-      host: 'smtp.gmail.com', 
-      port: 587,
-      secure: false, // Use TLS
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true, // Use SSL
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD
@@ -63,7 +57,7 @@ const emailService = {
    */
   sendReceiptEmail: async (options) => {
     try {
-      console.log('Attempting to send email with primary transporter...');
+      console.log('Attempting to send receipt email to:', options.to);
       const transporter = emailService.createTransporter();
       
       // Create the HTML content for the email
@@ -93,7 +87,7 @@ const emailService = {
           
           <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e1e1e1; color: #666; font-size: 12px;">
             <p>FEB Luxury Closet</p>
-            <p>Contact: +2348033825144 | Email: febluxurycloset@gmail.com</p>
+            <p>Contact: +2348033825144 | Email: tobirammar@gmail.com</p>
             <p>Follow us on <a href="https://www.instagram.com/f.e.b_luxuryclosetbackup1" style="color: #000;">Instagram</a> and 
                <a href="https://t.me/febluxury" style="color: #000;">Telegram</a></p>
           </div>
@@ -120,35 +114,64 @@ const emailService = {
 
       try {
         // Send the email with primary transporter
+        console.log('Sending email with primary method...');
         const info = await transporter.sendMail(mailOptions);
         console.log('Email sent successfully:', info.messageId);
         return { success: true, messageId: info.messageId };
       } catch (primaryError) {
-        // If primary method fails, try fallback
-        console.error('Primary email method failed:', primaryError.message);
+        // Log detailed error information
+        console.error('Primary email method failed:', primaryError);
+        if (primaryError.response) {
+          console.error('SMTP Response:', primaryError.response);
+        }
+        
+        // Handle common Gmail auth errors
+        if (primaryError.code === 'EAUTH' || 
+            (primaryError.response && primaryError.response.includes('5.7.8'))) {
+          console.error('Gmail authentication failed. This is likely due to:');
+          console.error('1. The App Password may have expired or been revoked');
+          console.error('2. 2FA might be required on the Gmail account');
+          console.error('3. Less secure app access settings may need adjustment');
+          console.error('To fix: Generate a new App Password in Google Account settings');
+          
+          throw new Error('Email authentication failed. Please check credentials or app password settings.');
+        }
+        
+        // Try fallback method
         console.log('Attempting fallback email method...');
-        
-        const fallbackTransporter = emailService.createFallbackTransporter();
-        const fallbackInfo = await fallbackTransporter.sendMail(mailOptions);
-        
-        console.log('Email sent successfully with fallback method:', fallbackInfo.messageId);
-        return { success: true, messageId: fallbackInfo.messageId, usedFallback: true };
+        try {
+          const fallbackTransporter = emailService.createFallbackTransporter();
+          const fallbackInfo = await fallbackTransporter.sendMail(mailOptions);
+          
+          console.log('Email sent successfully with fallback method:', fallbackInfo.messageId);
+          return { success: true, messageId: fallbackInfo.messageId, usedFallback: true };
+        } catch (fallbackError) {
+          console.error('Fallback email method also failed:', fallbackError);
+          throw new Error(`Email delivery failed: ${fallbackError.message}`);
+        }
       }
     } catch (error) {
       console.error('All email methods failed:', error);
       
-      // Add more specific error information to help with debugging
+      // Create a more specific error message based on the error type
+      let errorMessage = 'Failed to send email. ';
+      
       if (error.code === 'EAUTH') {
-        console.error('Authentication failed - check email/password or app password settings');
+        errorMessage += 'Authentication failed - check email credentials or app password settings.';
       } else if (error.code === 'ESOCKET') {
-        console.error('Socket connection failed - check network settings and firewall');
+        errorMessage += 'Connection error - check network and firewall settings.';
       } else if (error.code === 'ECONNECTION') {
-        console.error('Connection failed - check network settings');
+        errorMessage += 'Connection failed - check network settings.';
       } else if (error.code === 'ETIMEDOUT') {
-        console.error('Connection timed out - check network settings');
+        errorMessage += 'Connection timed out - check network settings.';
+      } else {
+        errorMessage += error.message || 'Unknown error occurred.';
       }
       
-      throw error;
+      // Wrap the error with more context
+      const enhancedError = new Error(errorMessage);
+      enhancedError.originalError = error;
+      throw enhancedError;
     }
   }
 };
