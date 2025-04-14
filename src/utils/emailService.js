@@ -70,7 +70,8 @@ const emailService = {
           
           <div style="margin-bottom: 30px;">
             <p>Dear ${options.customerName},</p>
-            <p>Thank you for your order! Your payment has been received, and your order is being processed.</p>
+            <p>Thank you for your order! We have received your order details and it is now being processed.</p>
+            <p>Please note that your order requires payment to be completed. <strong>Contact us via WhatsApp to complete your payment.</strong></p>
             <p>Here are your order details:</p>
           </div>
           
@@ -82,14 +83,36 @@ const emailService = {
           </div>
           
           <div style="margin-bottom: 30px;">
-            <p>Your receipt is attached to this email. If you have any questions about your order, please contact us.</p>
+            <p>Your receipt is attached to this email. To complete your order, please:</p>
+            <ol style="margin-left: 20px;">
+              <li>Make payment via bank transfer to the account details on your receipt</li>
+              <li>Contact us via WhatsApp to confirm your payment</li>
+            </ol>
+            <p>Your order will be processed after payment confirmation.</p>
+            
+            <div style="text-align: center; margin: 25px 0;">
+              <a href="https://wa.me/message/NP6XO5SXNXG5G1" style="display: inline-block; background-color: #25D366; color: white; font-weight: bold; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 16px;">
+                Contact Us on WhatsApp
+              </a>
+            </div>
           </div>
+          
+          ${options.productImages ? `
+          <div style="margin-bottom: 30px;">
+            <p style="font-weight: bold; margin-bottom: 10px;">Your Order Items:</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+              ${options.productImages.map(img => `
+                <div style="border: 1px solid #e1e1e1; border-radius: 5px; padding: 5px; width: 100px; height: 100px; overflow: hidden;">
+                  <img src="${img}" style="width: 100%; height: 100%; object-fit: cover;" alt="Product Image" />
+                </div>
+              `).join('')}
+            </div>
+          </div>` : ''}
           
           <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e1e1e1; color: #666; font-size: 12px;">
             <p>FEB Luxury Closet</p>
-            <p>Contact: +2348033825144 | Email: tobirammar@gmail.com</p>
-            <p>Follow us on <a href="https://www.instagram.com/f.e.b_luxuryclosetbackup1" style="color: #000;">Instagram</a> and 
-               <a href="https://t.me/febluxury" style="color: #000;">Telegram</a></p>
+            <p>Contact: +2348033825144 | Email: febluxurycloset@gmail.com</p>
+            <p><a href="https://wa.me/message/NP6XO5SXNXG5G1" style="color: #25D366; font-weight: bold;">WhatsApp: Click here to chat</a></p>
           </div>
         </div>
       `;

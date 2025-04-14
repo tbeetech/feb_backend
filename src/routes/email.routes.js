@@ -67,6 +67,23 @@ router.post('/send-receipt-email', upload.single('receipt'), async (req, res) =>
       }
     }
 
+    // Get product images if available
+    let productImages = [];
+    if (req.body.productImages) {
+      try {
+        productImages = JSON.parse(req.body.productImages);
+        
+        // Validate product images
+        if (Array.isArray(productImages)) {
+          // Filter out invalid URLs or empty strings
+          productImages = productImages.filter(url => url && typeof url === 'string' && url.trim() !== '');
+        }
+      } catch (error) {
+        console.warn('Failed to parse productImages, ignoring:', error);
+        productImages = [];
+      }
+    }
+
     // Validate file size
     if (req.file.size > 5 * 1024 * 1024) {
       return res.status(400).json({
@@ -86,7 +103,8 @@ router.post('/send-receipt-email', upload.single('receipt'), async (req, res) =>
       totalAmount: totalAmount || '0.00',
       attachment: req.file.buffer,
       attachmentName: `receipt-${receiptNumber}.pdf`,
-      adminEmails
+      adminEmails,
+      productImages
     });
 
     return res.status(200).json({ 
