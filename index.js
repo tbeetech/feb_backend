@@ -34,9 +34,12 @@ app.use('/images', express.static(path.join(__dirname, 'images')));
 const authRoutes = require('./src/users/user.route');
 const productRoutes = require('./src/products/products.route');
 const reviewRoutes = require('./src/reviews/reviews.router');
+const emailRoutes = require('./src/routes/email.routes');
+
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api', emailRoutes); // Mount email routes at the /api path
 
 // Database connection
 mongoose.connect(process.env.DB_URL)
