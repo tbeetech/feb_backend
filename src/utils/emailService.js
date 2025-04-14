@@ -20,12 +20,18 @@ const emailService = {
       },
       tls: {
         rejectUnauthorized: false
-      }
+      },
+      // Add debug option for detailed SMTP logs in development
+      ...(process.env.NODE_ENV === 'development' && { debug: true })
     });
   },
 
   // Create a more direct SMTP transporter as fallback
   createFallbackTransporter: () => {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      throw new Error('Email service not properly configured. Missing credentials for fallback transport.');
+    }
+
     return nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 465,
@@ -36,7 +42,9 @@ const emailService = {
       },
       tls: {
         rejectUnauthorized: false
-      }
+      },
+      // Add debug option for detailed SMTP logs in development
+      ...(process.env.NODE_ENV === 'development' && { debug: true })
     });
   },
 
@@ -58,7 +66,27 @@ const emailService = {
   sendReceiptEmail: async (options) => {
     try {
       console.log('Attempting to send receipt email to:', options.to);
-      const transporter = emailService.createTransporter();
+      console.log('Email service configuration:');
+      console.log('- EMAIL_USER configured:', process.env.EMAIL_USER ? 'Yes' : 'No');
+      console.log('- EMAIL_PASSWORD length:', process.env.EMAIL_PASSWORD ? process.env.EMAIL_PASSWORD.length : 0);
+      console.log('- NODE_ENV:', process.env.NODE_ENV);
+      
+      // Check if the attachment exists and is valid
+      if (!options.attachment || options.attachment.length === 0) {
+        console.warn('Warning: The attachment is empty or missing');
+      } else {
+        console.log('Attachment size:', options.attachment.length, 'bytes');
+      }
+      
+      // First try primary transporter
+      let transporter;
+      try {
+        transporter = emailService.createTransporter();
+        console.log('Primary email transporter created successfully');
+      } catch (transporterError) {
+        console.error('Failed to create primary email transporter:', transporterError);
+        throw new Error(`Email configuration error: ${transporterError.message}`);
+      }
       
       // Create the HTML content for the email
       const htmlContent = `
@@ -108,7 +136,7 @@ const emailService = {
             </div>
           </div>
           
-          ${options.productImages ? `
+          ${options.productImages && options.productImages.length > 0 ? `
           <div style="margin-bottom: 30px;">
             <p style="font-weight: bold; margin-bottom: 10px;">Your Order Items:</p>
             <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
@@ -134,16 +162,24 @@ const emailService = {
         to: options.to,
         subject: options.subject || 'Your FEB Luxury Order Confirmation',
         html: htmlContent,
-        attachments: [{
-          filename: options.attachmentName,
+        attachments: []
+      };
+      
+      // Only add attachment if it exists and is valid
+      if (options.attachment && options.attachment.length > 0) {
+        mailOptions.attachments.push({
+          filename: options.attachmentName || 'receipt.pdf',
           content: options.attachment,
           contentType: 'application/pdf'
-        }]
-      };
+        });
+      } else {
+        console.warn('No valid attachment provided for the email');
+      }
 
       // Add CC if admin emails are provided
       if (options.adminEmails && options.adminEmails.length > 0) {
         mailOptions.cc = options.adminEmails.join(',');
+        console.log('Adding CC recipients:', mailOptions.cc);
       }
 
       try {
@@ -155,6 +191,9 @@ const emailService = {
       } catch (primaryError) {
         // Log detailed error information
         console.error('Primary email method failed:', primaryError);
+        console.error('Error code:', primaryError.code);
+        console.error('Error message:', primaryError.message);
+        
         if (primaryError.response) {
           console.error('SMTP Response:', primaryError.response);
         }
@@ -167,6 +206,24 @@ const emailService = {
           console.error('2. 2FA might be required on the Gmail account');
           console.error('3. Less secure app access settings may need adjustment');
           console.error('To fix: Generate a new App Password in Google Account settings');
+          
+          // Try fallback without attachment if authentication failed
+          console.log('Attempting to send email without attachment...');
+          try {
+            const simpleMailOptions = { ...mailOptions };
+            simpleMailOptions.attachments = [];
+            simpleMailOptions.html += '<p><strong>Note:</strong> We could not attach your receipt due to a technical issue. Please contact us to receive your receipt.</p>';
+            
+            const simpleInfo = await transporter.sendMail(simpleMailOptions);
+            console.log('Simple email without attachment sent successfully:', simpleInfo.messageId);
+            return { 
+              success: true, 
+              messageId: simpleInfo.messageId, 
+              warning: 'Email sent without attachment due to technical limitations' 
+            };
+          } catch (simpleError) {
+            console.error('Simple email also failed:', simpleError);
+          }
           
           throw new Error('Email authentication failed. Please check credentials or app password settings.');
         }
@@ -181,6 +238,26 @@ const emailService = {
           return { success: true, messageId: fallbackInfo.messageId, usedFallback: true };
         } catch (fallbackError) {
           console.error('Fallback email method also failed:', fallbackError);
+          
+          // Try one last attempt without attachment
+          try {
+            console.log('Last resort: Sending email without attachment...');
+            const fallbackTransporter = emailService.createFallbackTransporter();
+            const simpleMailOptions = { ...mailOptions };
+            simpleMailOptions.attachments = [];
+            simpleMailOptions.html += '<p><strong>Note:</strong> We could not attach your receipt due to a technical issue. Please contact us to receive your receipt.</p>';
+            
+            const finalInfo = await fallbackTransporter.sendMail(simpleMailOptions);
+            console.log('Last resort email sent successfully:', finalInfo.messageId);
+            return { 
+              success: true, 
+              messageId: finalInfo.messageId, 
+              warning: 'Email sent without attachment due to technical limitations' 
+            };
+          } catch (finalError) {
+            console.error('All email attempts failed:', finalError);
+          }
+          
           throw new Error(`Email delivery failed: ${fallbackError.message}`);
         }
       }
@@ -198,6 +275,8 @@ const emailService = {
         errorMessage += 'Connection failed - check network settings.';
       } else if (error.code === 'ETIMEDOUT') {
         errorMessage += 'Connection timed out - check network settings.';
+      } else if (error.message && error.message.includes('configuration')) {
+        errorMessage += 'Configuration error - email service not properly set up.';
       } else {
         errorMessage += error.message || 'Unknown error occurred.';
       }
@@ -205,6 +284,7 @@ const emailService = {
       // Wrap the error with more context
       const enhancedError = new Error(errorMessage);
       enhancedError.originalError = error;
+      enhancedError.code = error.code;
       throw enhancedError;
     }
   }
