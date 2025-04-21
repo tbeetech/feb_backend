@@ -8,19 +8,29 @@ require('dotenv').config();
 // middleware setup
 app.use(express.json({limit: '25mb'}));
 app.use(cors({
-    origin: [
-        'https://febluxury.com',
-        'https://www.febluxury.com',
-        'https://feb-backend.vercel.app', 
-        'https://feb-frontend.vercel.app', 
-        'http://localhost:5173',
-        'http://www.localhost:5173',
-        'http://localhost:5174',
-        'http://localhost:5000'
-    ],
+    origin: function(origin, callback) {
+        const allowedOrigins = [
+            'https://febluxury.com',
+            'https://www.febluxury.com',
+            'https://feb-backend.vercel.app', 
+            'https://feb-frontend.vercel.app', 
+            'http://localhost:5173',
+            'http://localhost:5174',
+            'http://localhost:5000'
+        ];
+        
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) === -1) {
+            return callback(new Error('CORS not allowed'), false);
+        }
+        return callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
+    maxAge: 86400 // CORS preflight cache for 24 hours
 }));
 
 // Enable pre-flight requests for all routes
