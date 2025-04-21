@@ -8,42 +8,30 @@ require('dotenv').config();
 // middleware setup
 app.use(express.json({limit: '25mb'}));
 
-// CORS configuration
-const corsOptions = {
-    origin: function(origin, callback) {
-        // Allow these origins and their www variants
-        const allowedDomains = [
-            'febluxury.com',
-            'www.febluxury.com',
-            'localhost:5173',
-            'localhost:5174',
-            'localhost:5000'
-        ];
-        
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        
-        // Process the origin to handle both http and https
-        const originDomain = origin.replace(/^https?:\/\//, '');
-        
-        // Check if the origin's domain is allowed
-        if (allowedDomains.includes(originDomain)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+// CORS configuration with flexible origin handling
+app.use(cors({
+    origin: true, // This allows all origins but respects the Origin header
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
+    exposedHeaders: ['Access-Control-Allow-Origin'],
     maxAge: 86400 // CORS preflight cache for 24 hours
-};
-
-// Apply CORS middleware
-app.use(cors(corsOptions));
+}));
 
 // Enable pre-flight requests for all routes
-app.options('*', cors(corsOptions));
+app.options('*', cors());
+
+// Redirect middleware to handle www to non-www (or vice versa)
+app.use((req, res, next) => {
+    if (process.env.NODE_ENV === 'production') {
+        const host = req.get('host');
+        // Redirect www to non-www
+        if (host.startsWith('www.')) {
+            return res.redirect(301, `https://febluxury.com${req.url}`);
+        }
+    }
+    next();
+});
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
