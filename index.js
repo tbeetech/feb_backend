@@ -7,13 +7,14 @@ require('dotenv').config();
 
 // middleware setup
 app.use(express.json({limit: '25mb'}));
-app.use(cors({
+
+// CORS configuration
+const corsOptions = {
     origin: function(origin, callback) {
+        // Allow these origins
         const allowedOrigins = [
             'https://febluxury.com',
             'https://www.febluxury.com',
-            'https://feb-backend.vercel.app', 
-            'https://feb-frontend.vercel.app', 
             'http://localhost:5173',
             'http://localhost:5174',
             'http://localhost:5000'
@@ -22,19 +23,24 @@ app.use(cors({
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
-        if (allowedOrigins.indexOf(origin) === -1) {
-            return callback(new Error('CORS not allowed'), false);
+        // Check if the origin is allowed
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
         }
-        return callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
     maxAge: 86400 // CORS preflight cache for 24 hours
-}));
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
 
 // Enable pre-flight requests for all routes
-app.options('*', cors());
+app.options('*', cors(corsOptions));
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -49,7 +55,7 @@ const emailRoutes = require('./src/routes/email.routes');
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/reviews', reviewRoutes);
-app.use('/api', emailRoutes); // Mount email routes at the /api path
+app.use('/api', emailRoutes);
 
 // Database connection
 mongoose.connect(process.env.DB_URL)
