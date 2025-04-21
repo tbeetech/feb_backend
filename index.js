@@ -11,20 +11,23 @@ app.use(express.json({limit: '25mb'}));
 // CORS configuration
 const corsOptions = {
     origin: function(origin, callback) {
-        // Allow these origins
-        const allowedOrigins = [
-            'https://febluxury.com',
-            'https://www.febluxury.com',
-            'http://localhost:5173',
-            'http://localhost:5174',
-            'http://localhost:5000'
+        // Allow these origins and their www variants
+        const allowedDomains = [
+            'febluxury.com',
+            'www.febluxury.com',
+            'localhost:5173',
+            'localhost:5174',
+            'localhost:5000'
         ];
         
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
         
-        // Check if the origin is allowed
-        if (allowedOrigins.includes(origin)) {
+        // Process the origin to handle both http and https
+        const originDomain = origin.replace(/^https?:\/\//, '');
+        
+        // Check if the origin's domain is allowed
+        if (allowedDomains.includes(originDomain)) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
@@ -52,6 +55,7 @@ const productRoutes = require('./src/products/products.route');
 const reviewRoutes = require('./src/reviews/reviews.router');
 const emailRoutes = require('./src/routes/email.routes');
 
+// Mount routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/reviews', reviewRoutes);
@@ -68,22 +72,16 @@ app.get('/api', (req, res) => {
 });
 
 // Error handling middleware
-app.use((req, res, next) => {
-    res.status(404).json({ message: 'Route not found' });
-});
-
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ 
-        message: 'Something went wrong!',
-        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    console.error('Error:', err);
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || 'Internal server error',
+        error: process.env.NODE_ENV === 'development' ? err : {}
     });
 });
 
-// For Vercel, we export the app instead of calling listen
 const PORT = process.env.PORT || 5000;
-
-// Always start the server (remove the environment check)
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
