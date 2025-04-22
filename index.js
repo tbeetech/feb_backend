@@ -8,6 +8,16 @@ require('dotenv').config();
 // middleware setup
 app.use(express.json({limit: '25mb'}));
 
+// Handle redirects before CORS
+app.use((req, res, next) => {
+    const host = req.get('host');
+    // Only redirect in production
+    if (process.env.NODE_ENV === 'production' && host.startsWith('www.')) {
+        return res.redirect(301, `https://febluxury.com${req.url}`);
+    }
+    next();
+});
+
 // CORS configuration
 const corsOptions = {
     origin: function(origin, callback) {
@@ -37,16 +47,6 @@ app.use(cors(corsOptions));
 
 // Enable pre-flight requests for all routes
 app.options('*', cors(corsOptions));
-
-// Handle redirects after CORS
-app.use((req, res, next) => {
-    const host = req.get('host');
-    // Only redirect in production
-    if (process.env.NODE_ENV === 'production' && host.startsWith('www.')) {
-        return res.redirect(301, `https://febluxury.com${req.url}`);
-    }
-    next();
-});
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
