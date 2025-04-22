@@ -11,7 +11,6 @@ app.use(express.json({limit: '25mb'}));
 // CORS configuration
 const corsOptions = {
     origin: function(origin, callback) {
-        // List of allowed origins
         const allowedOrigins = [
             'https://febluxury.com',
             'https://www.febluxury.com',
@@ -20,7 +19,6 @@ const corsOptions = {
             'http://localhost:5000'
         ];
         
-        // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
@@ -29,9 +27,9 @@ const corsOptions = {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'x-requested-with'],
     exposedHeaders: ['Access-Control-Allow-Origin'],
-    maxAge: 86400 // CORS preflight cache for 24 hours
+    maxAge: 86400
 };
 
 // Apply CORS middleware
