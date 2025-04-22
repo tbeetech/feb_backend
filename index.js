@@ -8,30 +8,47 @@ require('dotenv').config();
 // middleware setup
 app.use(express.json({limit: '25mb'}));
 
-// CORS configuration with flexible origin handling
-app.use(cors({
-    origin: true, // This allows all origins but respects the Origin header
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
-    exposedHeaders: ['Access-Control-Allow-Origin'],
-    maxAge: 86400 // CORS preflight cache for 24 hours
-}));
-
-// Enable pre-flight requests for all routes
-app.options('*', cors());
-
-// Redirect middleware to handle www to non-www (or vice versa)
+// Redirect middleware to handle www to non-www (or vice versa) - must come before CORS
 app.use((req, res, next) => {
     if (process.env.NODE_ENV === 'production') {
         const host = req.get('host');
-        // Redirect www to non-www
+        // Always redirect to non-www version
         if (host.startsWith('www.')) {
-            return res.redirect(301, `https://febluxury.com${req.url}`);
+            const newUrl = `https://febluxury.com${req.url}`;
+            return res.redirect(301, newUrl);
         }
     }
     next();
 });
+
+// CORS configuration
+const corsMiddleware = cors({
+    origin: function(origin, callback) {
+        const allowedOrigins = [
+            'https://febluxury.com',
+            'https://www.febluxury.com',
+            'http://localhost:5173',
+            'http://localhost:5174'
+        ];
+        
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin'],
+    exposedHeaders: ['Access-Control-Allow-Origin'],
+    maxAge: 86400
+});
+
+// Apply CORS middleware
+app.use(corsMiddleware);
+
+// Enable pre-flight requests for all routes
+app.options('*', corsMiddleware);
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
