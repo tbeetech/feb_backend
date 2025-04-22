@@ -8,17 +8,7 @@ require('dotenv').config();
 // middleware setup
 app.use(express.json({limit: '25mb'}));
 
-// Handle redirects before CORS
-app.use((req, res, next) => {
-    const host = req.get('host');
-    // Only redirect in production
-    if (process.env.NODE_ENV === 'production' && host.startsWith('www.')) {
-        return res.redirect(301, `https://febluxury.com${req.url}`);
-    }
-    next();
-});
-
-// CORS configuration
+// CORS configuration first
 const corsOptions = {
     origin: function(origin, callback) {
         const allowedOrigins = [
@@ -26,7 +16,8 @@ const corsOptions = {
             'https://www.febluxury.com',
             'http://localhost:5173',
             'http://localhost:5174',
-            'http://localhost:5000'
+            'http://localhost:5000',
+            'https://feb-backend.vercel.app'
         ];
         
         if (!origin || allowedOrigins.includes(origin)) {
@@ -47,6 +38,16 @@ app.use(cors(corsOptions));
 
 // Enable pre-flight requests for all routes
 app.options('*', cors(corsOptions));
+
+// Handle redirects before CORS
+app.use((req, res, next) => {
+    const host = req.get('host');
+    // Only redirect in production
+    if (process.env.NODE_ENV === 'production' && host.startsWith('www.')) {
+        return res.redirect(301, `https://febluxury.com${req.url}`);
+    }
+    next();
+});
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
