@@ -8,11 +8,11 @@
   ],
   "headers": [
     {
-      "source": "/api/(.*)",
+      "source": "/(.*)",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
-          "value": "https://febluxury.com"
+          "value": "*"
         },
         {
           "key": "Access-Control-Allow-Methods",
@@ -32,19 +32,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "index.js",
-      "continue": true
-    },
-    {
-      "src": "/(.*)",
-      "status": 308,
-      "has": [
-        {
-          "type": "host",
-          "value": "www.febluxury.com"
-        }
-      ],
-      "dest": "https://febluxury.com/$1"
+      "dest": "index.js"
     },
     {
       "src": "/(.*)",
