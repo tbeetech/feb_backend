@@ -116,7 +116,10 @@ const emailService = {
             <ol style="margin-left: 20px; margin-bottom: 5px;">
               <li>Download the attached receipt</li>
               <li>Make payment via bank transfer using the account details on the receipt</li>
-              <li>Forward the receipt to our WhatsApp number (+2348033825144) along with your payment confirmation</li>
+              <li>Forward the receipt to either of our WhatsApp numbers along with your payment confirmation:
+                <br/>- Primary: +2348033825144
+                <br/>- Secondary: +2348088690856
+              </li>
             </ol>
             <p style="margin-bottom: 0;">Your order will be processed after we confirm your payment.</p>
           </div>
@@ -130,9 +133,16 @@ const emailService = {
             <p>Your order will be processed after payment confirmation.</p>
             
             <div style="text-align: center; margin: 25px 0;">
-              <a href="https://wa.me/message/NP6XO5SXNXG5G1" style="display: inline-block; background-color: #25D366; color: white; font-weight: bold; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 16px;">
-                Contact Us on WhatsApp
-              </a>
+              <div style="margin-bottom: 10px;">
+                <a href="https://wa.me/message/NP6XO5SXNXG5G1" style="display: inline-block; background-color: #25D366; color: white; font-weight: bold; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 16px; margin: 5px;">
+                  Contact Primary WhatsApp
+                </a>
+              </div>
+              <div>
+                <a href="https://wa.me/2348088690856" style="display: inline-block; background-color: #25D366; color: white; font-weight: bold; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 16px; margin: 5px;">
+                  Contact Secondary WhatsApp
+                </a>
+              </div>
             </div>
           </div>
           
@@ -150,8 +160,15 @@ const emailService = {
           
           <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e1e1e1; color: #666; font-size: 12px;">
             <p>FEB Luxury Closet</p>
-            <p>Contact: +2348033825144 | Email: febluxurycloset@gmail.com</p>
-            <p><a href="https://wa.me/message/NP6XO5SXNXG5G1" style="color: #25D366; font-weight: bold;">WhatsApp: Click here to chat</a></p>
+            <p>Contact: +2348033825144 | +2348088690856 | Email: febluxurycloset@gmail.com</p>
+            <p>
+              <a href="https://wa.me/message/NP6XO5SXNXG5G1" style="color: #25D366; font-weight: bold; margin-right: 10px;">Primary WhatsApp</a> | 
+              <a href="https://wa.me/2348088690856" style="color: #25D366; font-weight: bold; margin-left: 10px;">Secondary WhatsApp</a>
+            </p>
+            <p>
+              <a href="https://www.instagram.com/f.e.b_luxuryclosetbackup1" style="color: #E4405F; font-weight: bold; margin-right: 10px;">@f.e.b_luxuryclosetbackup1</a> | 
+              <a href="https://www.instagram.com/jumiescent_backup" style="color: #E4405F; font-weight: bold; margin-left: 10px;">@jumiescent_backup</a>
+            </p>
           </div>
         </div>
       `;
@@ -290,4 +307,4 @@ const emailService = {
   }
 };
 
-module.exports = emailService; 
+module.exports = emailService;
