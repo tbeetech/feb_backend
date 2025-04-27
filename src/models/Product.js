@@ -38,6 +38,19 @@ const productSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  stockStatus: {
+    type: String,
+    enum: ['In Stock', 'Out of Stock', 'Pre Order'],
+    default: 'In Stock'
+  },
+  stockQuantity: {
+    type: Number,
+    default: 0
+  },
+  deliveryTimeFrame: {
+    startDate: Date,
+    endDate: Date
+  },
   features: [String],
   specifications: {
     type: Map,
@@ -56,7 +69,36 @@ const productSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+}, { timestamps: true });
+
+// Add a virtual field for estimated delivery date
+productSchema.virtual('estimatedDeliveryDate').get(function() {
+  const addBusinessDays = (date, days) => {
+    let currentDate = new Date(date);
+    let addedDays = 0;
+    while (addedDays < days) {
+      currentDate.setDate(currentDate.getDate() + 1);
+      if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
+        addedDays++;
+      }
+    }
+    return currentDate;
+  };
+
+  const today = new Date();
+  if (this.stockStatus === 'Pre Order') {
+    return addBusinessDays(today, 14);
+  } else if (this.stockStatus === 'In Stock') {
+    return addBusinessDays(today, 3);
+  } else if (this.deliveryTimeFrame?.startDate && this.deliveryTimeFrame?.endDate) {
+    return this.deliveryTimeFrame.endDate;
+  }
+  return null;
 });
+
+// Ensure virtuals are included in JSON
+productSchema.set('toJSON', { virtuals: true });
+productSchema.set('toObject', { virtuals: true });
 
 // Update the updatedAt timestamp before saving
 productSchema.pre('save', function(next) {
