@@ -28,14 +28,11 @@ const productSchema = new mongoose.Schema({
     type: String,
     required: true
   }],
-  colors: {
-    type: [{
-      name: { type: String, required: true },
-      hexCode: { type: String, required: true },
-      imageUrl: String
-    }],
-    default: []
-  },
+  colors: [{
+    name: String,
+    hexCode: String,
+    imageUrl: String
+  }],
   stock: {
     type: Number,
     required: true,
