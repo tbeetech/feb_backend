@@ -153,7 +153,7 @@ router.get('/', async (req, res) => {
         
         // Add proper sorting
         // Strip any ":1" or ":-1" suffix that may be appended to the sort value
-        const cleanSort = sort.replace(/:-?\d+$/, '');
+        const cleanSort = sort.replace(/:-?\d+$/, '') || '-createdAt';
         const sortObj = {};
         if (cleanSort.startsWith('-')) {
             sortObj[cleanSort.substring(1)] = -1;
