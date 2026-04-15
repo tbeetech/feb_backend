@@ -152,11 +152,13 @@ router.get('/', async (req, res) => {
         const totalPages = Math.ceil(totalProducts / parseInt(limit));
         
         // Add proper sorting
+        // Strip any ":1" or ":-1" suffix that may be appended to the sort value
+        const cleanSort = sort.replace(/:-?\d+$/, '') || '-createdAt';
         const sortObj = {};
-        if (sort.startsWith('-')) {
-            sortObj[sort.substring(1)] = -1;
+        if (cleanSort.startsWith('-')) {
+            sortObj[cleanSort.substring(1)] = -1;
         } else {
-            sortObj[sort] = 1;
+            sortObj[cleanSort] = 1;
         }
 
         const products = await Products.find(filter)
