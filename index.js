@@ -70,6 +70,11 @@ mongoose.connect(process.env.DB_URL)
     .then(() => console.log("MongoDB connected"))
     .catch(err => console.error("MongoDB connection error:", err));
 
+// Root route
+app.get('/', (req, res) => {
+    res.json({ message: 'Feb Luxury Backend API is running!' });
+});
+
 // Basic route for testing
 app.get('/api', (req, res) => {
     res.json({ message: 'Backend is running!' });
